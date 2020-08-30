@@ -5,6 +5,16 @@ import sqlalchemy
 
 
 def load_data(messages_filepath, categories_filepath):
+    """Loads data from two files as one file stores messages other one stores categories for the messages. 
+    Returns dataframe merged by these two files for machine learning algorithm
+
+    Args:
+        messages_filepath (str): Path of messages.csv file
+        categories_filepath (str): Path of categories.csv file
+
+    Returns:
+        pandas.DataFrame: Concatenated dataframe of two csv files
+    """
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     df = pd.merge(messages, categories, on="id")
@@ -17,17 +27,41 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+    """Removes duplicate rows and rows that have related other than binary label
+
+    Args:
+        df (pandas.DataFrame): Dataframe to be cleaned
+
+    Returns:
+        pandas.DataFrame: Cleaned DataFrame
+    """
     df = df[~df.duplicated()]
+    df = df[df.related != 2.0]
+
     return df
 
 
 def save_data(df, database_filename):
+    """Save data to sqlite database
+
+    Args:
+        df (pandas.DataFrame): Cleaned Dataset
+        database_filename (str): Sqlite Database Filename
+    """
     engine = sqlalchemy.create_engine(
         'sqlite:///{0}'.format(database_filename))
     df.to_sql('DisasterCleaned', engine, index=False)
 
 
 def clean_categories(categories):
+    """Clean categories dataset to each column for labels as 1 or 0
+
+    Args:
+        categories (pandas.DataFrame): categories dataset
+
+    Returns:
+        pandas.DataFrame: cleaned categories dataset
+    """
     categories = categories['categories'].str.split(';', expand=True)
     row = categories.iloc[0, :]
     category_colnames = row.apply(lambda s: s.split('-')[0])
@@ -39,6 +73,9 @@ def clean_categories(categories):
 
 
 def main():
+    """
+        Main code to run ETL Pipeline of Disaster Response Project
+    """
     if len(sys.argv) == 4:
 
         messages_filepath, categories_filepath, database_filepath = sys.argv[1:]

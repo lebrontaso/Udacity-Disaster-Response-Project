@@ -17,6 +17,16 @@ from sklearn.externals import joblib
 
 
 def load_data(database_filepath):
+    """Load data from Sqlite Database
+
+    Args:
+        database_filepath (str): Sqlite Database Filename
+
+    Returns:
+        numpy.ndArray: Messages for Disaster Responses
+        numpy.ndArray: Categories for Disaster Responses
+        list: Category Names
+    """
     engine = create_engine('sqlite:///{0}'.format(database_filepath))
     df = pd.read_sql_table('DisasterCleaned', engine)
     df = df.dropna(subset=['related'])
@@ -27,6 +37,13 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    """Clean, Tokenize sentences and Lemmatize words
+    Args:
+        text (str): Raw Text
+
+    Returns:
+        list: Tokenized and Cleaned sentence
+    """
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
@@ -39,6 +56,11 @@ def tokenize(text):
 
 
 def build_model():
+    """Pipeline Classification Model
+
+    Returns:
+        scikit-learn.GridSearchCV: Classification Pipeline Model
+    """
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize)),
         ('tfidf', TfidfTransformer()),
@@ -57,6 +79,14 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """Evaluation of the Classification model
+
+    Args:
+        model (scikit-learn.GridSearchCV): Classification Pipeline Model
+        X_test (numpy.ndArray): X_Test
+        Y_test (numpy.ndArray): Y_Test 
+        category_names (list): list of category names
+    """
     y_pred = model.predict(X_test)
     for i in range(y_pred.shape[1]):
         rc_score = recall_score(Y_test[:, i], y_pred[:, i], average='macro')
@@ -68,10 +98,19 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    """Save Model
+
+    Args:
+        model (scikit-learn.GridSearchCV): Classification Pipeline Model
+        model_filepath (str): Filepath to save model
+    """
     joblib.dump(model.best_estimator_, model_filepath)
 
 
 def main():
+    """
+        Main code to run Machine Learning Pipeline of Disaster Response Project
+    """
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
